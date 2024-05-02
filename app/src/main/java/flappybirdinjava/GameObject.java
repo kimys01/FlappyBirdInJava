@@ -3,6 +3,8 @@ package flappybirdinjava;
 import java.awt.*;
 import javax.swing.*;
 
+import com.google.errorprone.annotations.OverridingMethodsMustInvokeSuper;
+
 public abstract class GameObject extends JLabel {
     private final Image image;
     private final int IMAGE_WIDTH, IMAGE_HEIGHT;
@@ -21,6 +23,13 @@ public abstract class GameObject extends JLabel {
     public void update() {
         float sizeMultiply = Main.getSizeMultiply();
         setSize( (int)(IMAGE_WIDTH * sizeMultiply), (int)(IMAGE_HEIGHT * sizeMultiply) );
+    }
+
+    public int getImageWidth(){
+        return image.getWidth(null);
+    }
+    public int getImageHeigth(){
+        return image.getHeight(null);
     }
 
     @Override
@@ -68,7 +77,7 @@ class Bird extends GameObject {
     private final static Image image = new ImageIcon( Main.getPath("/sprites/bird_midflap.png") ).getImage();
 
     private float jump = 0f;
-    private final float GRAVITY = 3f;
+    private final float GRAVITY = 2f;
     private final float G_FORCE = 0.5f;
 
     public Bird() {
@@ -95,18 +104,67 @@ class Bird extends GameObject {
     }
 }
 class Pipe extends GameObject {
-    private static final Image image = new ImageIcon( Main.getPath("/sprites/pipe_down.png") ).getImage();
-    private static final Image image1 = new ImageIcon( Main.getPath("/sprites/pipe_up.png") ).getImage();
     private int speed = 1;
+    public static final int MIN_HEIGTH = 50;
 
-    public Pipe() {
+    public Pipe(Image image) {
         super(image);
-
     }
 
+    @Override
     public void update() {
         super.update();
-        setLocation(x - speed, y);
+
+        //Move
+        x -= speed;
+        setLocation(x, y);
+
+        //Remove
+        if (x <= -50) {
+            getParent().remove(this);
+        }
+    }
+} //Pipe class
+
+class PipeDown extends Pipe {
+    private final static Image image = new ImageIcon( Main.getPath("/sprites/pipe_down.png") ).getImage();
+
+    public PipeDown() {
+        super(image);
     }
 
+    @Override
+        public void setLocation(int x, int y){
+            int clampY = Main.clamp(y, -image.getHeight(null) + Pipe.MIN_HEIGTH, 0);
+            super.setLocation(x, clampY);
+        }
+}
+
+class PipeUp extends Pipe {
+    private final static Image image = new ImageIcon( Main.getPath("/sprites/pipe_up.png") ).getImage();
+
+    public PipeUp() {
+        super(image);
+    }
+    @Override
+        public void setLocation(int x, int y){
+            int clampY = Main.clamp(y,472 -image.getHeight(null) , 472 - Pipe.MIN_HEIGTH);
+            super.setLocation(x, clampY);
+        }
+}
+
+class PipeSpawner{
+    public static final int SPAWN_DELAY = 2500;
+    public static final int GAP = 100;
+
+    public static void spawnPipe(BackgroundPanel root, int y){
+        PipeDown pipedown =new PipeDown();
+        PipeUp pipeup =new PipeUp();
+
+        pipeup.setLocation(600, y + GAP);
+        pipedown.setLocation(600, y - pipedown.getImageHeigth() - GAP);
+
+        root.add(pipeup);
+        root.add(pipedown);
+    }
 }
