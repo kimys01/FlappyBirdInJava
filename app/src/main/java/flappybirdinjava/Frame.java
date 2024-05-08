@@ -10,6 +10,8 @@ public class Frame extends JFrame {
     private BackgroundPanel pnlGame = new BackgroundPanel();
     private Timer timer = new Timer();
     private TimerTask timerTask;
+    private Timer pipeSpawnTimer;
+    private TimerTask pipeSpawnTimerTask; 
 
     private static Dimension scrnSize = Toolkit.getDefaultToolkit().getScreenSize();
     private static Rectangle winSize = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
@@ -17,11 +19,14 @@ public class Frame extends JFrame {
 
     //Components
     Bird bird = new Bird();
-
+    private ScoreText scoreText = new ScoreText();
 
     //Variable
     private float sizeMultiply = 1.0f;
     private final int ORIGIN_SIZE = 512;
+    private boolean flagGameOver = false;
+    
+
 
     public Frame() {
         //Initialize
@@ -34,19 +39,15 @@ public class Frame extends JFrame {
 
         //Game Screen
         pnlGame.setLayout(null);
+
+        scoreText.setLocation(0,0);
+        scoreText.setSize(0,0);
+        pnlGame.add(scoreText);
+
+
         bird.setLocation(100, 100);
         bird.setSize(100, 100);
         pnlGame.add(bird);
-        
-        PipeDown pipe = new PipeDown();
-        pipe.setLocation(600, -164);
-        pipe.setSize(100, 100);
-        pnlGame.add(pipe);
-
-        PipeUp pipe2 = new PipeUp();
-        pipe2.setLocation(600, 356);
-        pipe2.setSize(100, 100);
-        pnlGame.add(pipe2);
 
         add(pnlGame, "Game");
         pnlGame.addMouseListener( new MyMouseListener() );
@@ -59,20 +60,22 @@ public class Frame extends JFrame {
             }
         };
         timer.scheduleAtFixedRate(timerTask, 0, 10);
+
+        pipeSpawnTimer = new Timer();
+        pipeSpawnTimerTask = new TimerTask() {
+            @Override
+            public void run(){
+                //  #TODO:파이프 생성구문 추가 
+                int randY = (int)(Math.random()*472);
+                int clampY = Main.clamp(randY,PipeSpawner.GAP + Pipe.MIN_HEIGTH,472-PipeSpawner.GAP-Pipe.MIN_HEIGTH);
+                PipeSpawner.spawnPipe(pnlGame, clampY);
+            }
+        }; 
+        pipeSpawnTimer.scheduleAtFixedRate(pipeSpawnTimerTask, 0, PipeSpawner.SPAWN_DELAY);
+    }
      //Constructor
 
-    Timer pipeSpawnTimer = new Timer();
-    TimerTask pipeSpawnTimerTask = new TimerTask() {
-        @Override
-        public void run(){
-            //  #TODO:파이프 생성구문 추가 
-            int randY = (int)(Math.random()*472);
-            int clampY = Main.clamp(randY,PipeSpawner.GAP + Pipe.MIN_HEIGTH,472-PipeSpawner.GAP-Pipe.MIN_HEIGTH);
-            PipeSpawner.spawnPipe(pnlGame, clampY);
-        }
-    }; 
-    pipeSpawnTimer.scheduleAtFixedRate(pipeSpawnTimerTask, PipeSpawner.SPAWN_DELAY, PipeSpawner.SPAWN_DELAY);
-}
+    
 
 
     public float getSizeMultiply() {
@@ -81,6 +84,24 @@ public class Frame extends JFrame {
 
     public int getTaskBarHeight() {
         return taskBarHeight;
+    }
+
+    public Bird getBird(){
+        return bird;
+    }
+
+    public void gameOver(){
+        flagGameOver = true;
+        pipeSpawnTimer.cancel();
+        System.out.println("game over");
+    }
+
+    public boolean isGameOver(){
+        return flagGameOver;
+    }
+
+    public void addScore(){
+        scoreText.addScore(1);
     }
 
     @Override
@@ -105,5 +126,10 @@ public class Frame extends JFrame {
             bird.jump();
         }
     }
+
     
+    private class MyKeyAdapter extends KeyAdapter{
+        //#TODO : 스페이스바를 눌렀을때 새가 점프하도록 구현
+    }
 }
+
